@@ -1,104 +1,76 @@
-SELECT *
+(Total Deaths Per Country)
+SELECT location, continent, MAX(population) AS Pop, MAX((CAST(total_deaths AS INT))) AS deaths, MAX(total_deaths/population)*100 AS DeathPerPop
 FROM [Covid deaths]
+WHERE continent is NOT NULL
+GROUP BY location, continent
 
-SELECT location, date, population, total_cases, new_cases, total_deaths
+(Global Death Figures)
+SELECT SUM(Pop) AS GlobalPop, SUM(deaths) AS Globaldeaths, (SUM(deaths)/SUM(Pop)*100) AS GlobalDeathPercent
+FROM(SELECT location, continent, MAX(population) AS Pop, MAX((CAST(total_deaths AS INT))) AS deaths, MAX(total_deaths/population)*100 AS DeathPerPop
 FROM [Covid deaths]
-ORDER BY 1,2
+WHERE continent is NOT NULL
+GROUP BY location, continent)t1
 
---Deaths Per Case
-SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 AS DeathPerCase
+(Death Per Month Per Country)
+SELECT location, continent, DATEADD(MONTH, DATEDIFF(MONTH, 0, date), 0) AS calc_date, MAX(population) AS Pop, MAX((CAST(total_deaths AS INT))) AS deaths, MAX((CAST(total_deaths AS INT))/population)*100 AS DeathPerPop
 FROM [Covid deaths]
-ORDER BY 1,2
+WHERE continent is NOT NULL
+GROUP BY DATEADD(MONTH, DATEDIFF(MONTH, 0, date), 0), location, continent
+ORDER BY 3
 
-SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 AS DeathPerCase
+(Total Cases Per Country)
+SELECT location, continent, MAX(population) AS Pop, MAX(total_cases) AS cases, MAX(total_cases/population)*100 AS CasesPerPop
 FROM [Covid deaths]
-WHERE location = 'United Kingdom'
-ORDER BY 1,2
+WHERE continent is NOT NULL
+GROUP BY location, continent
 
---Death Per Population
-SELECT location, population, (CAST(total_deaths AS INT)) AS Max_Deaths, MAX(total_deaths/population)*100 AS MaxDeathPerPop
+*Countries without cases
+
+(Global Cases)
+SELECT SUM(Pop) AS GlobalPop, SUM(cases) AS GlobalCases, (SUM(cases)/SUM(Pop)*100) AS GlobalCasesPercent
+FROM(SELECT location, continent, MAX(population) AS Pop, MAX(total_cases) AS cases, MAX(total_cases/population)*100 AS CasesPerPop
 FROM [Covid deaths]
-GROUP BY location, population
-ORDER BY 4 DESC
+WHERE continent is NOT NULL
+GROUP BY location, continent)t1
 
---Cases Per Poulation in the United Kingdom
-SELECT location, date, total_cases, population, ROUND((total_cases/population)*100, 3) AS CasePerPop
+(Death Per Month Per Country)
+SELECT location, continent, DATEADD(MONTH, DATEDIFF(MONTH, 0, date), 0) AS calc_date, MAX(population) AS Pop, MAX(total_cases) AS cases, (MAX(total_cases)/MAX(population))*100 AS CasesPerPop
 FROM [Covid deaths]
-WHERE location = 'United Kingdom'
-ORDER BY 1,2
+WHERE continent is NOT NULL
+GROUP BY DATEADD(MONTH, DATEDIFF(MONTH, 0, date), 0), location, continent
+ORDER BY 3
 
---Countries With Highest Cases Per Population
-SELECT location, population, MAX(total_cases) AS Max_Case, MAX(total_cases/population)*100 AS MaxCasePerPop
-FROM [Covid deaths]
-GROUP BY location, population
-ORDER BY 4 DESC
+(Total Vaccintions Per Country)
+SELECT v.location, v.continent, MAX(d.population) AS Pop, MAX(CAST(v.total_vaccinations AS INT)) AS vaccinations, MAX(CAST(v.people_vaccinated AS INT)) AS people_vacc, 
+MAX(CAST(v.people_fully_vaccinated AS INT)) AS people_fullvacc, MAX(CAST(v.people_vaccinated AS INT))/MAX(d.population)*100 AS VaccPerPop, 
+MAX(CAST(v.people_fully_vaccinated AS INT))/MAX(d.population)*100 AS FullyVaccPerPop
+FROM [Covid vaccinations] v 
+JOIN [Covid deaths] d
+ON v.location = d.location
+WHERE v.continent IS NOT NULL
+GROUP BY v.location, v.continent
 
---Countries With Highest Deaths Per Population
-SELECT location, population, MAX(CAST(total_deaths AS INT)) AS Max_Deaths, MAX(total_deaths/population)*100 AS MaxDeathPerPop
-FROM [Covid deaths]
-GROUP BY location, population
-ORDER BY 4 DESC
+(Global Vaccination Figures)
+SELECT SUM(Pop) AS GlobalPop, SUM(people_vacc) AS GlobalPeopleVacc, SUM(people_fullvacc) AS GlobalPeopleFullVacc, (SUM(people_vacc)/SUM(Pop))*100 AS GlobalVaccPerc,
+(SUM(people_fullvacc)/SUM(Pop))*100 AS GlobalFullVaccPerc
+FROM(SELECT v.location, v.continent, MAX(d.population) AS Pop, MAX(CAST(v.total_vaccinations AS BIGINT)) AS vaccinations, MAX(CAST(v.people_vaccinated AS BIGINT)) AS people_vacc, 
+MAX(CAST(v.people_fully_vaccinated AS BIGINT)) AS people_fullvacc, MAX(CAST(v.people_vaccinated AS BIGINT))/MAX(d.population)*100 AS VaccPerPop, 
+MAX(CAST(v.people_fully_vaccinated AS BIGINT))/MAX(d.population)*100 AS FullyVaccPerPop
+FROM [Covid vaccinations] v 
+JOIN [Covid deaths] d
+ON v.location = d.location
+WHERE v.continent IS NOT NULL
+GROUP BY v.location, v.continent)T1
 
---Death Count Per Continent
-SELECT continent, MAX(CAST(total_deaths AS INT)) AS Max_Deaths
-FROM [Covid deaths]
-WHERE continent IS NOT NULL
-GROUP BY continent
-ORDER BY Max_Deaths DESC
+(Vaccinations Per Month Per Country)
+SELECT v.location, v.continent, MAX(d.population) AS Pop, DATEADD(MONTH, DATEDIFF(MONTH, 0, v.date), 0) AS calc_date, MAX(CAST(v.total_vaccinations AS BIGINT)) AS vaccinations, MAX(CAST(v.people_vaccinated AS BIGINT)) AS people_vacc, 
+MAX(CAST(v.people_fully_vaccinated AS BIGINT)) AS people_fullvacc, MAX(CAST(v.people_vaccinated AS BIGINT))/MAX(d.population)*100 AS VaccPerPop, 
+MAX(CAST(v.people_fully_vaccinated AS BIGINT))/MAX(d.population)*100 AS FullyVaccPerPop
+FROM [Covid vaccinations] v 
+JOIN [Covid deaths] d
+ON v.location = d.location
+WHERE v.continent IS NOT NULL
+GROUP BY v.location, v.continent, DATEADD(MONTH, DATEDIFF(MONTH, 0, v.date), 0)
+ORDER BY DATEADD(MONTH, DATEDIFF(MONTH, 0, v.date), 0)
 
---Global Death Figures
-SELECT date, SUM(CAST(new_deaths AS INT)) AS Deaths, SUM(new_cases) AS Cases --(SUM(CAST(new_deaths AS INT))/SUM(new_cases))*100 AS WorldDeathPerCase
-FROM [Covid deaths]
-GROUP BY date
-ORDER BY 1, 3
 
---Number of People Vaccinated Globally
-SELECT cd.date, cd.location, cd.continent, cd.population, cv.new_vaccinations
-FROM [Covid deaths] cd
-JOIN [Covid vaccinations] cv
-ON cd.date = cv.date
-AND cd.location = cv.location
-WHERE cd.continent IS NOT NULL
-
---Running Total of Number of People Vaccinated Globally
-SELECT cd.date, cd.location, cd.continent, cd.population, cv.new_vaccinations,
-SUM(CAST(cv.new_vaccinations AS INT)) OVER (PARTITION BY cd.location ORDER BY cd.date) AS RollingCountVac
-FROM [Covid deaths] cd
-JOIN [Covid vaccinations] cv
-ON cd.date = cv.date
-AND cd.location = cv.location
-WHERE cd.continent IS NOT NULL
-ORDER BY 2, 3
-
---Running Total Percentage Vaccinated Globally
-WITH table1 AS
-(SELECT cd.date AS date, cd.location AS location, cd.continent AS continent, cd.population AS pop, cv.new_vaccinations,
-SUM(CAST(cv.new_vaccinations AS INT)) OVER (PARTITION BY cd.location ORDER BY cd.date) AS RollingCountVac
-FROM [Covid deaths] cd
-JOIN [Covid vaccinations] cv
-ON cd.date = cv.date
-AND cd.location = cv.location
-WHERE cd.continent IS NOT NULL)
-SELECT *, (RollingCountVac/pop)*100 AS RunningCountPerct
-FROM table1
-ORDER BY location, continent
-
---CREATING VIEWS
-CREATE VIEW 
-RunningCountPerct AS
-WITH table1 AS
-(SELECT cd.date AS date, cd.location AS location, cd.continent AS continent, cd.population AS pop, cv.new_vaccinations,
-SUM(CAST(cv.new_vaccinations AS INT)) OVER (PARTITION BY cd.location ORDER BY cd.date) AS RollingCountVac
-FROM [Covid deaths] cd
-JOIN [Covid vaccinations] cv
-ON cd.date = cv.date
-AND cd.location = cv.location
-WHERE cd.continent IS NOT NULL)
-SELECT *, (RollingCountVac/pop)*100 AS RunningCountPerct
-FROM table1
-
-CREATE VIEW
-GlobalDeathFigs AS
-SELECT date, SUM(CAST(new_deaths AS INT)) AS Deaths, SUM(new_cases) AS Cases 
-FROM [Covid deaths]
-GROUP BY date
