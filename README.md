@@ -1,2 +1,2 @@
-# Covid-Data-Exploration-
-Exploring Covid Data Using SQL
+# Covid-19-Data-Analysis
+Analysing and Presenting Insights on Covid Data Using SQL and PowerBI
